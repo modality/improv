@@ -25,13 +25,13 @@
     "gulp": "^3.9.1",
     "gulp-babel": "^5.1.0",
     "gulp-eslint": "^1.0.0",
-    "gulp-exclude-gitignore": "^1.0.0",
+    "gulp-exclude-gitignore": "^1.2.0",
     "gulp-istanbul": "^0.10.3",
     "gulp-mocha": "^2.0.0",
     "gulp-nsp": "^2.1.0",
     "gulp-plumber": "^1.0.0",
     "isparta": "^3.0.3",
-    "lodash": "^4.0.0",
+    "natives": "^1.1.6",
     "should": "^8.2.0",
     "simple-mock": "^0.5.0"
   },
@@ -85,13 +85,12 @@
   },
   "repository": "sequitur/improv",
   "scripts": {
-    "prepublish": "gulp prepublish",
     "test": "gulp"
   },
   "license": "MIT",
   "dependencies": {
     "amdefine": "^1.0.1",
-    "lodash": "^4.0.1",
+    "lodash": "^4.17.11",
     "nopt": "^4.0.1"
   }
 }
