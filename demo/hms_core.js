@@ -1,22 +1,24 @@
-import Improv from './lib/index.js';
 import jetpack from 'fs-jetpack';
+import Improv from './lib';
 
-function loadSpec () {
+function loadSpec() {
   const spec = {};
   const snippetFiles = jetpack.find(`${__dirname}/hms_data`, {
     matching: '*.json'
   });
-  snippetFiles.forEach(function (filename) {
+  snippetFiles.forEach(filename => {
     const snippet = jetpack.read(filename, 'json');
     if (typeof snippet.groups === 'undefined') {
       snippet.groups = [];
     }
+
     if (snippet.phrases) {
       snippet.groups.push({
         tags: [],
         phrases: snippet.phrases
       });
     }
+
     spec[snippet.name] = snippet;
   });
   return spec;
@@ -35,7 +37,7 @@ const shipMate = new Improv(loadSpec(), {
   audit: true
 });
 
-function newModel () {
+function newModel() {
   const model = {};
   // We generate the paragraph first so biases in the name corpus don't overly
   // affect ship characteristics.
@@ -44,7 +46,7 @@ function newModel () {
   return model;
 }
 
-export default function shipDesc () {
+export default function shipDesc() {
   return shipMate.gen('root', newModel());
 }
 

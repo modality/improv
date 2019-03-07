@@ -1,7 +1,7 @@
-import hms from './hms_core.js';
 import _ from 'lodash';
+import hms from './hms_core.js';
 
-function main () {
+function main() {
   console.log('\n---\n');
   console.log(hms());
 }

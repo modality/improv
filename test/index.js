@@ -1,11 +1,10 @@
 /* Main Improv file */
 
 import 'should';
-import Improv from '../lib';
 import simple from 'simple-mock';
+import Improv from '../lib';
 
-describe('improv', function () {
-
+describe('improv', () => {
   const testSnippet = {
     'test-snippet': {
       groups: [
@@ -24,17 +23,17 @@ describe('improv', function () {
     },
     'recur-binding': {
       bind: true,
-      groups: [{ phrases: ['[:binding-snippet]'] }]
+      groups: [{phrases: ['[:binding-snippet]']}]
     }
   };
 
   let testImprov;
 
-  beforeEach(function () {
+  beforeEach(() => {
     testImprov = new Improv(testSnippet);
   });
 
-  before(function () {
+  before(() => {
     /*
       Math.random() is, er, random. So we mock that issue away by replacing it
       with a function that always returns 0.5.
@@ -42,56 +41,50 @@ describe('improv', function () {
     simple.mock(Math, 'random', () => 0.5);
   });
 
-  after(function () { simple.restore(); });
+  after(() => {
+    simple.restore();
+  });
 
-  it('creates an Improv object', function () {
+  it('creates an Improv object', () => {
     testImprov.should.be.instanceOf(Improv);
   });
 
-  it('ensures model has tags', function () {
+  it('ensures model has tags', () => {
     const model = {};
     testImprov.gen('test-snippet', model);
     model.tags.should.eql([]);
   });
 
-  it('throws an error if an unknown snippet is to be generated', function () {
-    const badFunc = function () {
+  it('throws an error if an unknown snippet is to be generated', () => {
+    const badFunc = function() {
       testImprov.gen('foo', {});
     };
 
     badFunc.should.throw(Error);
   });
 
-  describe('applyFilters', function () {
-
-    it('produces a scored list of groups', function () {
-      (testImprov.applyFilters('test-snippet', {}))
-        .should.deepEqual([
-          {
-            group: {
-              phrases: ['dog', 'cat', 'pig'],
-              tags: []
-            },
-            score: 0
-          }
-        ]);
+  describe('applyFilters', () => {
+    it('produces a scored list of groups', () => {
+      testImprov.applyFilters('test-snippet', {}).should.deepEqual([
+        {
+          group: {
+            phrases: ['dog', 'cat', 'pig'],
+            tags: []
+          },
+          score: 0
+        }
+      ]);
     });
-
   });
 
-  describe('rng', function () {
-    it('allows supplying a custom RNG', function () {
+  describe('rng', () => {
+    it('allows supplying a custom RNG', () => {
       const snippets = {
         example: {
           groups: [
             {
               tags: [],
-              phrases: [
-                'foo',
-                'bar',
-                'baz',
-                'quux'
-              ]
+              phrases: ['foo', 'bar', 'baz', 'quux']
             }
           ]
         },
@@ -105,11 +98,16 @@ describe('improv', function () {
         }
       };
 
-      const rng0 = function () { return 0; };
-      const rng1 = function () { return 0.9999999; };
+      const rng0 = function() {
+        return 0;
+      };
 
-      const improv0 = new Improv(snippets, { rng: rng0 });
-      const improv1 = new Improv(snippets, { rng: rng1 });
+      const rng1 = function() {
+        return 0.9999999;
+      };
+
+      const improv0 = new Improv(snippets, {rng: rng0});
+      const improv1 = new Improv(snippets, {rng: rng1});
 
       improv0.gen('example').should.equal('foo');
       improv0.gen('num').should.equal('1');
@@ -118,9 +116,8 @@ describe('improv', function () {
     });
   });
 
-  describe('flattenGroups', function () {
-
-    it('flattens a scored list of groups into a tuple with tags', function () {
+  describe('flattenGroups', () => {
+    it('flattens a scored list of groups into a tuple with tags', () => {
       const testList = [
         {
           group: {
@@ -138,30 +135,18 @@ describe('improv', function () {
         }
       ];
 
-      (testImprov.flattenGroups(testList)).should.eql([
-        [
-          'dog',
-          [['canine']]
-        ],
-        [
-          'wolf',
-          [['canine']]
-        ],
-        [
-          'boar',
-          [['porcine']]
-        ],
-        [
-          'pig',
-          [['porcine']]
-        ]
-      ]);
+      testImprov
+        .flattenGroups(testList)
+        .should.eql([
+          ['dog', [['canine']]],
+          ['wolf', [['canine']]],
+          ['boar', [['porcine']]],
+          ['pig', [['porcine']]]
+        ]);
     });
-
   });
 
-  describe('selectPhrase', function () {
-
+  describe('selectPhrase', () => {
     const testList = [
       {
         group: {
@@ -177,14 +162,16 @@ describe('improv', function () {
       }
     ];
 
-    it('selects a phrase at random from a scored list', function () {
-      (testImprov.selectPhrase(testList))
-        .should.be.a.String().and.equal('boar');
+    it('selects a phrase at random from a scored list', () => {
+      testImprov
+        .selectPhrase(testList)
+        .should.be.a.String()
+        .and.equal('boar');
     });
   });
 
-  describe('scoreFilter', function () {
-    it('filters a scored list of groups', function () {
+  describe('scoreFilter', () => {
+    it('filters a scored list of groups', () => {
       const testList = [
         {
           group: {
@@ -206,7 +193,7 @@ describe('improv', function () {
         }
       ];
 
-      (testImprov.scoreFilter(testList)).should.deepEqual([
+      testImprov.scoreFilter(testList).should.deepEqual([
         {
           group: {
             phrases: ['dog', 'cat', 'bat']
@@ -223,46 +210,47 @@ describe('improv', function () {
     });
   });
 
-  describe('gen', function () {
-    it('generates a random phrase after applying all filters', function () {
-      (testImprov.gen('test-snippet', {})).should.equal('cat');
+  describe('gen', () => {
+    it('generates a random phrase after applying all filters', () => {
+      testImprov.gen('test-snippet', {}).should.equal('cat');
     });
 
-    it('binds values to models', function () {
+    it('binds values to models', () => {
       const model = {};
       const result = testImprov.gen('binding-snippet', model);
 
       result.should.equal(model.bindings['binding-snippet']);
     });
 
-    it('reuses the bound value', function () {
-      const model = { bindings: { 'binding-snippet': 'paste' } };
-      testImprov.gen('binding-snippet', model)
+    it('reuses the bound value', () => {
+      const model = {bindings: {'binding-snippet': 'paste'}};
+      testImprov
+        .gen('binding-snippet', model)
         .should.equal(testImprov.gen('binding-snippet', model))
         .and.equal('paste');
     });
 
-    it('works recursively', function () {
+    it('works recursively', () => {
       const model = {};
       testImprov.gen('recur-binding', model);
-      model.bindings['recur-binding']
-        .should.equal(model.bindings['binding-snippet']);
+      model.bindings['recur-binding'].should.equal(
+        model.bindings['binding-snippet']
+      );
     });
 
-    it('throws an error if a snippet does not exist', function () {
+    it('throws an error if a snippet does not exist', () => {
       const model = {};
-      const f = function () { testImprov.gen('missing-snippet', model); };
+      const f = function() {
+        testImprov.gen('missing-snippet', model);
+      };
 
       f.should.throw();
-
     });
-
   });
 
-  describe('auditing', function () {
-
-    it('returns a map of used phrases', function () {
-      const auditImprov = new Improv(testSnippet, { audit: true });
+  describe('auditing', () => {
+    it('returns a map of used phrases', () => {
+      const auditImprov = new Improv(testSnippet, {audit: true});
       auditImprov.gen('test-snippet');
       auditImprov.gen('test-snippet');
       auditImprov.gen('test-snippet');
@@ -270,14 +258,19 @@ describe('improv', function () {
 
       result.should.not.be.undefined();
       result.should.be.instanceOf(Map);
-      result.get('test-snippet').get('cat').should.equal(3);
-      result.get('test-snippet').get('pig').should.equal(0);
+      result
+        .get('test-snippet')
+        .get('cat')
+        .should.equal(3);
+      result
+        .get('test-snippet')
+        .get('pig')
+        .should.equal(0);
     });
   });
-
 });
 
-describe('with filters', function () {
+describe('with filters', () => {
   const testSet = {
     line: {
       groups: [
@@ -301,7 +294,6 @@ describe('with filters', function () {
           tags: [],
           phrases: ['pet rock']
         }
-
       ]
     },
     badSnippet: {
@@ -312,41 +304,40 @@ describe('with filters', function () {
       ]
     }
   };
-  describe('with mismatch filter', function () {
+  describe('with mismatch filter', () => {
     const expectedValue = 0;
-    const wMismatch = new Improv(testSet,
-      { filters: [Improv.filters.mismatchFilter()] });
+    const wMismatch = new Improv(testSet, {
+      filters: [Improv.filters.mismatchFilter()]
+    });
 
-    before(function () {
+    before(() => {
       simple.mock(Math, 'random', () => expectedValue);
     });
 
-    after(function () {
+    after(() => {
       simple.restore();
     });
 
-    it('allows only values that do not mismatch the model', function () {
-      const model1 = { tags: [['animal', 'dog']] };
-      const model2 = { tags: [['animal', 'cat']] };
+    it('allows only values that do not mismatch the model', () => {
+      const model1 = {tags: [['animal', 'dog']]};
+      const model2 = {tags: [['animal', 'cat']]};
 
       wMismatch.gen('pet', model1).should.equal('dog');
       wMismatch.gen('pet', model2).should.equal('cat');
     });
 
-    it('treats no tag property as empty tags', function () {
+    it('treats no tag property as empty tags', () => {
       let result;
-      const cb = function () {
+      const cb = function() {
         result = wMismatch.gen('badSnippet');
       };
 
       cb.should.not.throwError();
       result.should.equal('foo');
     });
-
   });
 
-  describe('with templates', function () {
-
+  describe('with templates', () => {
     const spec = {
       root: {
         groups: [
@@ -380,35 +371,36 @@ describe('with filters', function () {
 
     const generator = new Improv(spec, {
       builtins: {
-        upcap (str) { return str.toUpperCase(); }
+        upcap(str) {
+          return str.toUpperCase();
+        }
       }
     });
 
-    const model = { name: 'Bob' };
+    const model = {name: 'Bob'};
 
-    it('uses the templating engine', function () {
-      generator.gen('root', model).should.match(
-        /Hi, my name is Bob, and I own [0-9]+ (cat|dog|parakeet)s./);
-
+    it('uses the templating engine', () => {
+      generator
+        .gen('root', model)
+        .should.match(/Hi, my name is Bob, and I own \d+ (cat|dog|parakeet)s./);
     });
 
-    it('uses templating builtins', function () {
-      generator.gen('loud', model).should.match(
-        /(CAT|DOG|PARAKEET)/
-      );
+    it('uses templating builtins', () => {
+      generator.gen('loud', model).should.match(/(CAT|DOG|PARAKEET)/);
     });
 
-    it('gives useful errors', function () {
-      function failer () {
+    it('gives useful errors', () => {
+      function failer() {
         generator.gen('fails');
       }
-      failer.should
-        .throwError('Builtin or model property "fails" is not a function.');
-    });
 
+      failer.should.throwError(
+        'Builtin or model property "fails" is not a function.'
+      );
+    });
   });
 
-  describe('structured search', function () {
+  describe('structured search', () => {
     const spec = {
       root: {
         groups: [
@@ -432,35 +424,31 @@ describe('with filters', function () {
     };
 
     const generator = new Improv(spec, {
-      filters: [
-        Improv.filters.mismatchFilter()
-      ],
+      filters: [Improv.filters.mismatchFilter()],
       reincorporate: true
     });
 
     const modelOne = {
-      tags: [
-        ['mood', 'dark']
-      ]
+      tags: [['mood', 'dark']]
     };
 
     const modelTwo = {};
 
-    it('uses the provided tags', function () {
-      generator.gen('root', modelOne).should
-        .equal('dark phrase, bright phrase, dark phrase');
+    it('uses the provided tags', () => {
+      generator
+        .gen('root', modelOne)
+        .should.equal('dark phrase, bright phrase, dark phrase');
     });
 
-    it('does not mutate the model', function () {
-      generator.gen('root', modelTwo).should
-        .match(/(bright|dark) phrase, bright phrase, \1 phrase/);
+    it('does not mutate the model', () => {
+      generator
+        .gen('root', modelTwo)
+        .should.match(/(bright|dark) phrase, bright phrase, \1 phrase/);
     });
   });
-
 });
 
-describe('reincorporation', function () {
-
+describe('reincorporation', () => {
   const spec = {
     root: {
       groups: [
@@ -480,19 +468,18 @@ describe('reincorporation', function () {
     }
   };
 
-  const reincorporater = new Improv(spec, { reincorporate: true });
+  const reincorporater = new Improv(spec, {reincorporate: true});
 
-  it('adds used tags back into the model', function () {
+  it('adds used tags back into the model', () => {
     const model = {
       tags: []
     };
 
     reincorporater.gen('root', model);
     model.tags.should.eql([['test']]);
-
   });
 
-  it('merges tags with existing ones', function () {
+  it('merges tags with existing ones', () => {
     const model = {
       tags: [['foo']]
     };
@@ -502,17 +489,16 @@ describe('reincorporation', function () {
   });
 });
 
-describe('salience filtering', function () {
-
-  before(function () {
+describe('salience filtering', () => {
+  before(() => {
     simple.mock(Math, 'random', () => 0.9);
   });
 
-  after(function () {
+  after(() => {
     simple.restore();
   });
 
-  it('selects the best fitted phrase', function () {
+  it('selects the best fitted phrase', () => {
     const spec = {
       root: {
         groups: [
@@ -533,27 +519,26 @@ describe('salience filtering', function () {
     };
 
     const fitted = new Improv(spec, {
-      filters: [Improv.filters.fullBonus()] });
+      filters: [Improv.filters.fullBonus()]
+    });
 
     fitted.gen('root', model).should.equal('foo');
-
   });
 });
 
-describe('filtering API', function () {
-
-  before(function () {
+describe('filtering API', () => {
+  before(() => {
     simple.mock(Math, 'random', () => 0);
   });
 
-  after(function () {
+  after(() => {
     simple.restore();
   });
 
-  it('gives filters access to model, a group, and the generator', function () {
+  it('gives filters access to model, a group, and the generator', () => {
     let results;
-    const myFilter = function (group, model) {
-      results = { group, model, thisObj: this };
+    const myFilter = function(group, model) {
+      results = {group, model, thisObj: this};
       return 0;
     };
 
@@ -568,7 +553,7 @@ describe('filtering API', function () {
       }
     };
 
-    const model = { tags: ['test'] };
+    const model = {tags: ['test']};
 
     const customFilter = new Improv(spec, {
       filters: [myFilter]
@@ -581,7 +566,7 @@ describe('filtering API', function () {
     results.thisObj.should.equal(customFilter);
   });
 
-  it('allows setting the salience formula', function () {
+  it('allows setting the salience formula', () => {
     const spec = {
       root: {
         groups: [
@@ -607,10 +592,9 @@ describe('filtering API', function () {
     customFilter.gen('root', model).should.equal('foo');
     customFilter.gen('root', model).should.equal('foo');
   });
-
 });
 
-describe('history and DRYness', function () {
+describe('history and DRYness', () => {
   const spec = {
     first: {
       groups: [
@@ -660,41 +644,48 @@ describe('history and DRYness', function () {
 
   let g;
 
-  beforeEach(function () {
+  beforeEach(() => {
     g = new Improv(spec);
   });
 
-  it('records a history of generated phrases', function () {
-    g.gen('first'); g.gen('second'); g.gen('first'); g.gen('first');
+  it('records a history of generated phrases', () => {
+    g.gen('first');
+    g.gen('second');
+    g.gen('first');
+    g.gen('first');
     g.history.should.eql(['one', 'one', 'two', 'one']);
   });
 
-  it('records a history of used tags', function () {
-    g.gen('first'); g.gen('first'); g.gen('second');
+  it('records a history of used tags', () => {
+    g.gen('first');
+    g.gen('first');
+    g.gen('second');
     g.tagHistory.should.eql([['two'], ['three'], ['one'], ['one']]);
   });
 
-  it('allows history to be cleared', function () {
-    g.gen('second'); g.gen('first');
+  it('allows history to be cleared', () => {
+    g.gen('second');
+    g.gen('first');
     g.history.should.eql(['one', 'two']);
     g.tagHistory.should.eql([['one'], ['two'], ['three']]);
-    g.clearHistory(); g.clearTagHistory();
+    g.clearHistory();
+    g.clearTagHistory();
     g.history.should.eql([]);
     g.tagHistory.should.eql([]);
   });
 
-  it('allows persistence to be disabled', function () {
-    const h = new Improv(spec, { persistence: false });
+  it('allows persistence to be disabled', () => {
+    const h = new Improv(spec, {persistence: false});
     h.gen('first');
     h.history.should.eql([]);
     h.tagHistory.should.eql([]);
   });
 
-  describe('dryness filter', function () {
-    before(function () {
+  describe('dryness filter', () => {
+    before(() => {
       simple.mock(Math, 'random', () => 0);
     });
-    after(function () {
+    after(() => {
       simple.restore();
     });
 
@@ -702,18 +693,18 @@ describe('history and DRYness', function () {
       filters: [Improv.filters.dryness()]
     });
 
-    it('doesn\'t repeat itself', function () {
+    it("doesn't repeat itself", () => {
       i.gen('third').should.equal('one');
       i.gen('third').should.equal('two');
       i.gen('third').should.equal('three');
     });
   });
 
-  describe('unmentioned filter', function () {
-    before(function () {
+  describe('unmentioned filter', () => {
+    before(() => {
       simple.mock(Math, 'random', () => 0);
     });
-    after(function () {
+    after(() => {
       simple.restore();
     });
 
@@ -721,18 +712,18 @@ describe('history and DRYness', function () {
       filters: [Improv.filters.unmentioned()]
     });
 
-    it('increases the rank of unused tags', function () {
+    it('increases the rank of unused tags', () => {
       j.gen('fourth').should.equal('one');
       j.gen('fourth').should.equal('two');
       j.gen('fourth').should.equal('one');
     });
   });
 
-  describe('momentary persistence', function () {
-    before(function () {
+  describe('momentary persistence', () => {
+    before(() => {
       simple.mock(Math, 'random', () => 0);
     });
-    after(function () {
+    after(() => {
       simple.restore();
     });
 
@@ -741,25 +732,23 @@ describe('history and DRYness', function () {
       persistence: false
     });
 
-    it('retains history for the duration of one gen', function () {
-      i.gen('fifth').should.equal('onetwoone').and.equal(i.gen('fifth'));
+    it('retains history for the duration of one gen', () => {
+      i.gen('fifth')
+        .should.equal('onetwoone')
+        .and.equal(i.gen('fifth'));
       i.tagHistory.should.eql([]);
     });
   });
 });
 
-describe('submodels', function () {
+describe('submodels', () => {
   const spec = {
     eyecolor: {
       bind: true,
       groups: [
         {
           tags: [],
-          phrases: [
-            'blue',
-            'black',
-            'brown',
-          ]
+          phrases: ['blue', 'black', 'brown']
         }
       ]
     },
@@ -768,11 +757,7 @@ describe('submodels', function () {
       groups: [
         {
           tags: [],
-          phrases: [
-            'lawyer',
-            'thief',
-            'hunter'
-          ]
+          phrases: ['lawyer', 'thief', 'hunter']
         }
       ]
     },
@@ -780,9 +765,7 @@ describe('submodels', function () {
       groups: [
         {
           tags: [],
-          phrases: [
-            '[:occupation] with [:eyecolor] eyes'
-          ]
+          phrases: ['[:occupation] with [:eyecolor] eyes']
         }
       ]
     },
@@ -790,9 +773,7 @@ describe('submodels', function () {
       groups: [
         {
           tags: [],
-          phrases: [
-            '[a >person1:person_desc];[a >person2:person_desc]'
-          ]
+          phrases: ['[a >person1:person_desc];[a >person2:person_desc]']
         }
       ]
     },
@@ -800,9 +781,7 @@ describe('submodels', function () {
       groups: [
         {
           tags: [],
-          phrases: [
-            '[a >person1:person_desc]'
-          ]
+          phrases: ['[a >person1:person_desc]']
         }
       ]
     },
@@ -810,9 +789,7 @@ describe('submodels', function () {
       groups: [
         {
           tags: [],
-          phrases: [
-            '[a >person2:person_desc]'
-          ]
+          phrases: ['[a >person2:person_desc]']
         }
       ]
     },
@@ -820,9 +797,7 @@ describe('submodels', function () {
       groups: [
         {
           tags: [],
-          phrases: [
-            '[>person2:proptest]'
-          ]
+          phrases: ['[>person2:proptest]']
         }
       ]
     },
@@ -830,9 +805,7 @@ describe('submodels', function () {
       groups: [
         {
           tags: [],
-          phrases: [
-            '[prop]'
-          ]
+          phrases: ['[prop]']
         }
       ]
     }
@@ -840,17 +813,17 @@ describe('submodels', function () {
 
   let g;
 
-  beforeEach(function () {
+  beforeEach(() => {
     g = new Improv(spec, {
-      submodeler () {
+      submodeler() {
         return {
           prop: 'foo'
-        }
+        };
       }
     });
   });
 
-  it('uses submodels', function () {
+  it('uses submodels', () => {
     const model = {};
     const [a, b] = g.gen('main_phrase', model).split(';');
     a.should.match(/(lawyer|thief|hunter) with (blue|black|brown) eyes/);
@@ -858,10 +831,10 @@ describe('submodels', function () {
     b.should.equal(g.gen('person2', model));
   });
 
-  it ('uses the submodeler function', function () {
+  it('uses the submodeler function', () => {
     const model = {};
     g.gen('person_proptest', model).should.equal('foo');
-  })
+  });
 });
 
 // TODO: Test and document the "forced tag" functionality.

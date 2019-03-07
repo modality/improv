@@ -1,4 +1,4 @@
-import Improv from './lib/index.js';
+import Improv from './lib';
 
 const spec = {
   animal: {
@@ -17,9 +17,7 @@ const spec = {
     groups: [
       {
         tags: [],
-        phrases: [
-          '[name]: I have a [:animal] who is [#2-7] years old.'
-        ]
+        phrases: ['[name]: I have a [:animal] who is [#2-7] years old.']
       }
     ]
   }
@@ -29,9 +27,9 @@ const improv = new Improv(spec, {
   filters: [Improv.filters.mismatchFilter()]
 });
 
-const bob = { name: 'Bob' };
-const alice = { name: 'Alice', tags: [['class', 'mammal']] };
-const carol = { name: 'Carol', tags: [['class', 'bird']] };
+const bob = {name: 'Bob'};
+const alice = {name: 'Alice', tags: [['class', 'mammal']]};
+const carol = {name: 'Carol', tags: [['class', 'bird']]};
 
 const lines = [
   improv.gen('root', bob),
