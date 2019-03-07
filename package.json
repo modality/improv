@@ -16,7 +16,13 @@
   "repository": "sequitur/improv",
   "scripts": {
     "test": "nyc mocha --require @babel/polyfill --require @babel/register",
-    "build": "babel lib -d dist"
+    "watch": "npm run test -- --watch",
+    "prebuild": "rm -rf dist demo_build",
+    "build": "babel lib -d dist",
+    "demo": "npm run demo:build && npm run demo:lib && npm run demo:json",
+    "demo:build": "babel demo/**/*.js -d demo_build",
+    "demo:lib": "babel lib -d demo_build/lib",
+    "demo:json": "cp demo/**/*.json demo_build"
   },
   "eslintConfig": {
     "env": {
