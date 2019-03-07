@@ -3,3 +3,4 @@ coverage
 dist
 demo_build
 docs/_build
+.nyc_output
