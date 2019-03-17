@@ -17,8 +17,9 @@
   "scripts": {
     "test": "nyc mocha --require @babel/polyfill --require @babel/register",
     "watch": "npm run test -- --watch",
-    "prebuild": "rm -rf dist demo_build",
+    "prebuild": "rm -rf dist demo_build .nyc_output",
     "build": "babel lib -d dist",
+    "prettier": "prettier --write '{demo,lib,test}/**/*.js'",
     "demo": "npm run demo:build && npm run demo:lib && npm run demo:json",
     "demo:build": "babel demo/**/*.js -d demo_build",
     "demo:lib": "babel lib -d demo_build/lib",
@@ -71,11 +72,7 @@
       "max-lines": 0
     }
   },
-  "dependencies": {
-    "amdefine": "^1.0.1",
-    "lodash": "^4.17.11",
-    "nopt": "^4.0.1"
-  },
+  "dependencies": {},
   "devDependencies": {
     "@babel/cli": "^7.2.3",
     "@babel/core": "^7.3.4",
@@ -83,13 +80,11 @@
     "@babel/polyfill": "^7.0.0",
     "@babel/preset-env": "^7.3.4",
     "@babel/register": "^7.0.0",
-    "async": "^2.6.2",
-    "del": "^4.0.0",
     "fs-jetpack": "^2.2.2",
-    "isparta": "^4.1.1",
     "mocha": "^6.0.2",
     "natives": "^1.1.6",
     "nyc": "^13.3.0",
+    "prettier": "^1.16.4",
     "should": "^13.2.3",
     "simple-mock": "^0.8.0"
   }

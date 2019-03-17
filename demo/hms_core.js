@@ -1,14 +1,14 @@
-import jetpack from 'fs-jetpack';
-import Improv from './lib';
+import jetpack from "fs-jetpack";
+import Improv from "./lib";
 
 function loadSpec() {
   const spec = {};
   const snippetFiles = jetpack.find(`${__dirname}/hms_data`, {
-    matching: '*.json'
+    matching: "*.json"
   });
   snippetFiles.forEach(filename => {
-    const snippet = jetpack.read(filename, 'json');
-    if (typeof snippet.groups === 'undefined') {
+    const snippet = jetpack.read(filename, "json");
+    if (typeof snippet.groups === "undefined") {
       snippet.groups = [];
     }
 
@@ -41,13 +41,13 @@ function newModel() {
   const model = {};
   // We generate the paragraph first so biases in the name corpus don't overly
   // affect ship characteristics.
-  shipMate.gen('class', model);
-  shipMate.gen('graph', model);
+  shipMate.gen("class", model);
+  shipMate.gen("graph", model);
   return model;
 }
 
 export default function shipDesc() {
-  return shipMate.gen('root', newModel());
+  return shipMate.gen("root", newModel());
 }
 
 shipDesc.generator = shipMate;

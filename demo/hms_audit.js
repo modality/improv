@@ -1,11 +1,12 @@
-import _ from 'lodash';
-import hms from './hms_core.js';
+import hms from "./hms_core.js";
 
 function runGen() {
-  hms.generator.gen('root', hms.newModel());
+  hms.generator.gen("root", hms.newModel());
 }
 
-_.times(1000, runGen);
+for (let i = 0; i < 1000; i += 1) {
+  runGen();
+}
 
 const auditResults = hms.generator.phraseAudit;
 const sortedSnippets = [];

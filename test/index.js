@@ -1,74 +1,75 @@
 /* Main Improv file */
+import assert from "assert";
+import should from "should";
+import simple from "simple-mock";
+import Improv from "../lib";
+import {
+  createFiltersSelector,
+  convertGroupsToPhrases,
+  createPhraseSelector,
+  createSalienceSelector
+} from "../lib/generator/core";
 
-import 'should';
-import simple from 'simple-mock';
-import Improv from '../lib';
+import { clearHistory } from "../lib/generator/model";
 
-describe('improv', () => {
+describe("improv", () => {
   const testSnippet = {
-    'test-snippet': {
+    "test-snippet": {
       groups: [
         {
-          phrases: ['dog', 'cat', 'pig']
+          phrases: ["dog", "cat", "pig"]
         }
       ]
     },
-    'binding-snippet': {
+    "binding-snippet": {
       bind: true,
       groups: [
         {
-          phrases: ['glue', 'cement', 'binder']
+          phrases: ["glue", "cement", "binder"]
         }
       ]
     },
-    'recur-binding': {
+    "recur-binding": {
       bind: true,
-      groups: [{phrases: ['[:binding-snippet]']}]
+      groups: [{ phrases: ["[:binding-snippet]"] }]
     }
   };
 
   let testImprov;
 
   beforeEach(() => {
-    testImprov = new Improv(testSnippet);
+    testImprov = new Improv(testSnippet, {
+      rng: () => 0.5
+    });
   });
 
-  before(() => {
-    /*
-      Math.random() is, er, random. So we mock that issue away by replacing it
-      with a function that always returns 0.5.
-    */
-    simple.mock(Math, 'random', () => 0.5);
+  it("creates an Improv object", () => {
+    assert(testImprov instanceof Improv);
   });
 
-  after(() => {
-    simple.restore();
-  });
-
-  it('creates an Improv object', () => {
-    testImprov.should.be.instanceOf(Improv);
-  });
-
-  it('ensures model has tags', () => {
+  it("ensures model has tags", () => {
     const model = {};
-    testImprov.gen('test-snippet', model);
-    model.tags.should.eql([]);
+    const full = testImprov.fullGen("test-snippet", model);
+    assert.deepStrictEqual(full.model.tags, []);
   });
 
-  it('throws an error if an unknown snippet is to be generated', () => {
+  it("throws an error if an unknown snippet is to be generated", () => {
     const badFunc = function() {
-      testImprov.gen('foo', {});
+      testImprov.gen("foo", {});
     };
 
-    badFunc.should.throw(Error);
+    assert.throws(badFunc, Error);
   });
 
-  describe('applyFilters', () => {
-    it('produces a scored list of groups', () => {
-      testImprov.applyFilters('test-snippet', {}).should.deepEqual([
+  describe("createFiltersSelector", () => {
+    it("produces a scored list of groups", () => {
+      const filtersSelector = createFiltersSelector([]);
+      const groups = testImprov.snippets["test-snippet"].groups;
+
+      assert.deepStrictEqual(filtersSelector(groups, {}), [
         {
           group: {
-            phrases: ['dog', 'cat', 'pig'],
+            phrases: ["dog", "cat", "pig"],
             tags: []
           },
           score: 0
@@ -77,14 +78,14 @@ describe('improv', () => {
     });
   });
 
-  describe('rng', () => {
-    it('allows supplying a custom RNG', () => {
+  describe("rng", () => {
+    it("allows supplying a custom RNG", () => {
       const snippets = {
         example: {
           groups: [
             {
               tags: [],
-              phrases: ['foo', 'bar', 'baz', 'quux']
+              phrases: ["foo", "bar", "baz", "quux"]
             }
           ]
         },
@@ -92,7 +93,7 @@ describe('improv', () => {
           groups: [
             {
               tags: [],
-              phrases: ['[#1-20]']
+              phrases: ["[#1-20]"]
             }
           ]
         }
@@ -106,103 +107,104 @@ describe('improv', () => {
         return 0.9999999;
       };
 
-      const improv0 = new Improv(snippets, {rng: rng0});
-      const improv1 = new Improv(snippets, {rng: rng1});
+      const improv0 = new Improv(snippets, { rng: rng0 });
+      const improv1 = new Improv(snippets, { rng: rng1 });
 
-      improv0.gen('example').should.equal('foo');
-      improv0.gen('num').should.equal('1');
-      improv1.gen('example').should.equal('quux');
-      improv1.gen('num').should.equal('20');
+      assert.equal(improv0.gen("example"), "foo");
+      assert.equal(improv0.gen("num"), "1");
+      assert.equal(improv1.gen("example"), "quux");
+      assert.equal(improv1.gen("num"), "20");
     });
   });
 
-  describe('flattenGroups', () => {
-    it('flattens a scored list of groups into a tuple with tags', () => {
+  describe("convertGroupsToPhrases", () => {
+    it("flattens a scored list of groups into a tuple with tags", () => {
       const testList = [
         {
           group: {
-            tags: [['canine']],
-            phrases: ['dog', 'wolf']
+            tags: [["canine"]],
+            phrases: ["dog", "wolf"]
           },
           score: 0
         },
         {
           group: {
-            tags: [['porcine']],
-            phrases: ['boar', 'pig']
+            tags: [["porcine"]],
+            phrases: ["boar", "pig"]
           },
           score: 0
         }
       ];
 
-      testImprov
-        .flattenGroups(testList)
-        .should.eql([
-          ['dog', [['canine']]],
-          ['wolf', [['canine']]],
-          ['boar', [['porcine']]],
-          ['pig', [['porcine']]]
-        ]);
+      assert.deepStrictEqual(convertGroupsToPhrases(testList), [
+        ["dog", [["canine"]]],
+        ["wolf", [["canine"]]],
+        ["boar", [["porcine"]]],
+        ["pig", [["porcine"]]]
+      ]);
     });
   });
 
-  describe('selectPhrase', () => {
+  describe("createPhraseSelector", () => {
     const testList = [
       {
         group: {
-          phrases: ['dog', 'cat', 'pig']
+          phrases: ["dog", "cat", "pig"]
         },
         score: 0
       },
       {
         group: {
-          phrases: ['boar', 'deer', 'puma']
+          phrases: ["boar", "deer", "puma"]
         },
         score: 0
       }
     ];
 
-    it('selects a phrase at random from a scored list', () => {
-      testImprov
-        .selectPhrase(testList)
-        .should.be.a.String()
-        .and.equal('boar');
+    it("selects a phrase at random from a scored list", () => {
+      const phraseSelector = createPhraseSelector(false, () => 0.5);
+      const phrases = convertGroupsToPhrases(testList);
+      const result = phraseSelector(phrases, {});
+      assert.equal(typeof result, "string");
+      assert.equal(result, "boar");
     });
   });
 
-  describe('scoreFilter', () => {
-    it('filters a scored list of groups', () => {
+  describe("createSalienceSelector", () => {
+    it("filters a scored list of groups", () => {
       const testList = [
         {
           group: {
-            phrases: ['dog', 'cat', 'bat']
+            phrases: ["dog", "cat", "bat"]
           },
           score: 1
         },
         {
           group: {
-            phrases: ['mantis', 'shrimp', 'spider']
+            phrases: ["mantis", "shrimp", "spider"]
           },
           score: 1
         },
         {
           group: {
-            phrases: ['pig', 'boar']
+            phrases: ["pig", "boar"]
           },
           score: 0
         }
       ];
 
-      testImprov.scoreFilter(testList).should.deepEqual([
+      const salienceSelector = createSalienceSelector(a => a);
+
+      salienceSelector(testList).should.deepEqual([
         {
           group: {
-            phrases: ['dog', 'cat', 'bat']
+            phrases: ["dog", "cat", "bat"]
           },
           score: 1
         },
         {
           group: {
-            phrases: ['mantis', 'shrimp', 'spider']
+            phrases: ["mantis", "shrimp", "spider"]
           },
           score: 1
         }
@@ -210,166 +212,162 @@ describe('improv', () => {
     });
   });
 
-  describe('gen', () => {
-    it('generates a random phrase after applying all filters', () => {
-      testImprov.gen('test-snippet', {}).should.equal('cat');
+  describe("gen", () => {
+    it("generates a random phrase after applying all filters", () => {
+      testImprov.gen("test-snippet", {}).should.equal("cat");
     });
 
-    it('binds values to models', () => {
+    it("binds values to models", () => {
       const model = {};
-      const result = testImprov.gen('binding-snippet', model);
+      const result = testImprov.gen("binding-snippet", model);
 
-      result.should.equal(model.bindings['binding-snippet']);
+      result.should.equal(model.bindings["binding-snippet"]);
     });
 
-    it('reuses the bound value', () => {
-      const model = {bindings: {'binding-snippet': 'paste'}};
+    it("reuses the bound value", () => {
+      const model = { bindings: { "binding-snippet": "paste" } };
       testImprov
-        .gen('binding-snippet', model)
-        .should.equal(testImprov.gen('binding-snippet', model))
-        .and.equal('paste');
+        .gen("binding-snippet", model)
+        .should.equal(testImprov.gen("binding-snippet", model))
+        .and.equal("paste");
     });
 
-    it('works recursively', () => {
+    it("works recursively", () => {
       const model = {};
-      testImprov.gen('recur-binding', model);
-      model.bindings['recur-binding'].should.equal(
-        model.bindings['binding-snippet']
+      testImprov.gen("recur-binding", model);
+      model.bindings["recur-binding"].should.equal(
+        model.bindings["binding-snippet"]
       );
     });
 
-    it('throws an error if a snippet does not exist', () => {
+    it("throws an error if a snippet does not exist", () => {
       const model = {};
       const f = function() {
-        testImprov.gen('missing-snippet', model);
+        testImprov.gen("missing-snippet", model);
       };
 
-      f.should.throw();
+      assert.throws(f, Error);
     });
   });
 
-  describe('auditing', () => {
-    it('returns a map of used phrases', () => {
-      const auditImprov = new Improv(testSnippet, {audit: true});
-      auditImprov.gen('test-snippet');
-      auditImprov.gen('test-snippet');
-      auditImprov.gen('test-snippet');
+  describe("auditing", () => {
+    it("returns a map of used phrases", () => {
+      const auditImprov = new Improv(testSnippet, {
+        audit: true,
+        rng: () => 0.5
+      });
+      auditImprov.gen("test-snippet");
+      auditImprov.gen("test-snippet");
+      auditImprov.gen("test-snippet");
       const result = auditImprov.phraseAudit;
 
-      result.should.not.be.undefined();
-      result.should.be.instanceOf(Map);
+      assert.notEqual(result, undefined);
+      assert(result instanceof Map);
+
       result
-        .get('test-snippet')
-        .get('cat')
+        .get("test-snippet")
+        .get("cat")
         .should.equal(3);
       result
-        .get('test-snippet')
-        .get('pig')
+        .get("test-snippet")
+        .get("pig")
         .should.equal(0);
     });
   });
 });
 
-describe('with filters', () => {
-  const testSet = {
+describe("with filters", () => {
+  const snippets = {
     line: {
       groups: [
         {
           tags: [],
-          phrases: 'I love my [:pet].'
+          phrases: "I love my [:pet]."
         }
       ]
     },
     pet: {
       groups: [
         {
-          tags: [['animal', 'dog']],
-          phrases: ['dog']
+          tags: [["animal", "dog"]],
+          phrases: ["dog"]
         },
         {
-          tags: [['animal', 'cat']],
-          phrases: ['cat']
+          tags: [["animal", "cat"]],
+          phrases: ["cat"]
         },
         {
           tags: [],
-          phrases: ['pet rock']
+          phrases: ["pet rock"]
         }
       ]
     },
     badSnippet: {
       groups: [
         {
-          phrases: ['foo']
+          phrases: ["foo"]
         }
       ]
     }
   };
-  describe('with mismatch filter', () => {
+  describe("with mismatch filter", () => {
     const expectedValue = 0;
-    const wMismatch = new Improv(testSet, {
-      filters: [Improv.filters.mismatchFilter()]
+    const wMismatch = new Improv(snippets, {
+      filters: [Improv.filters.mismatchFilter()],
+      rng: () => expectedValue
     });
 
-    before(() => {
-      simple.mock(Math, 'random', () => expectedValue);
+    it("allows only values that do not mismatch the model", () => {
+      const model1 = { tags: [["animal", "dog"]] };
+      const model2 = { tags: [["animal", "cat"]] };
+      assert.equal(wMismatch.gen("pet", model1), "dog");
+      assert.equal(wMismatch.gen("pet", model2), "cat");
     });
 
-    after(() => {
-      simple.restore();
-    });
-
-    it('allows only values that do not mismatch the model', () => {
-      const model1 = {tags: [['animal', 'dog']]};
-      const model2 = {tags: [['animal', 'cat']]};
-
-      wMismatch.gen('pet', model1).should.equal('dog');
-      wMismatch.gen('pet', model2).should.equal('cat');
-    });
-
-    it('treats no tag property as empty tags', () => {
+    it("treats no tag property as empty tags", () => {
       let result;
       const cb = function() {
-        result = wMismatch.gen('badSnippet');
+        result = wMismatch.gen("badSnippet");
       };
 
       cb.should.not.throwError();
-      result.should.equal('foo');
+      assert.equal(result, "foo");
     });
   });
 
-  describe('with templates', () => {
-    const spec = {
+  describe("with templates", () => {
+    const snippets = {
       root: {
         groups: [
           {
-            phrases: ['Hi, my name is [name], and I own [#1-20] [:pet]s.']
+            phrases: ["Hi, my name is [name], and I own [#1-20] [:pet]s."]
           }
         ]
       },
       pet: {
         groups: [
           {
-            phrases: ['cat', 'dog', 'parakeet']
+            phrases: ["cat", "dog", "parakeet"]
           }
         ]
       },
       loud: {
         groups: [
           {
-            phrases: ['[upcap :pet]']
+            phrases: ["[upcap :pet]"]
           }
         ]
       },
       fails: {
         groups: [
           {
-            phrases: ['[fails :pet]']
+            phrases: ["[fails :pet]"]
           }
         ]
       }
     };
 
-    const generator = new Improv(spec, {
+    const generator = new Improv(snippets, {
       builtins: {
         upcap(str) {
           return str.toUpperCase();
@@ -377,21 +375,21 @@ describe('with filters', () => {
       }
     });
 
-    const model = {name: 'Bob'};
+    const model = { name: "Bob" };
 
-    it('uses the templating engine', () => {
+    it("uses the templating engine", () => {
       generator
-        .gen('root', model)
+        .gen("root", model)
         .should.match(/Hi, my name is Bob, and I own \d+ (cat|dog|parakeet)s./);
     });
 
-    it('uses templating builtins', () => {
-      generator.gen('loud', model).should.match(/(CAT|DOG|PARAKEET)/);
+    it("uses templating builtins", () => {
+      generator.gen("loud", model).should.match(/(CAT|DOG|PARAKEET)/);
     });
 
-    it('gives useful errors', () => {
+    it("gives useful errors", () => {
       function failer() {
-        generator.gen('fails');
+        generator.gen("fails");
       }
 
       failer.should.throwError(
@@ -400,215 +398,209 @@ describe('with filters', () => {
     });
   });
 
-  describe('structured search', () => {
-    const spec = {
+  describe("structured search", () => {
+    const snippets = {
       root: {
         groups: [
           {
-            phrases: ['[:phrase], [|mood|bright:phrase], [:phrase]']
+            phrases: ["[:phrase], [|mood|bright:phrase], [:phrase]"]
           }
         ]
       },
       phrase: {
         groups: [
           {
-            tags: [['mood', 'dark']],
-            phrases: ['dark phrase']
+            tags: [["mood", "dark"]],
+            phrases: ["dark phrase"]
           },
           {
-            tags: [['mood', 'bright']],
-            phrases: ['bright phrase']
+            tags: [["mood", "bright"]],
+            phrases: ["bright phrase"]
           }
         ]
       }
     };
 
-    const generator = new Improv(spec, {
+    const generator = new Improv(snippets, {
       filters: [Improv.filters.mismatchFilter()],
       reincorporate: true
     });
 
     const modelOne = {
-      tags: [['mood', 'dark']]
+      tags: [["mood", "dark"]]
     };
 
     const modelTwo = {};
 
-    it('uses the provided tags', () => {
-      generator
-        .gen('root', modelOne)
-        .should.equal('dark phrase, bright phrase, dark phrase');
+    it("uses the provided tags", () => {
+      assert.equal(
+        generator.gen("root", modelOne),
+        "dark phrase, bright phrase, dark phrase"
+      );
     });
 
-    it('does not mutate the model', () => {
+    it("does not mutate the model", () => {
       generator
-        .gen('root', modelTwo)
+        .gen("root", modelTwo)
         .should.match(/(bright|dark) phrase, bright phrase, \1 phrase/);
     });
   });
 });
 
-describe('reincorporation', () => {
-  const spec = {
+describe("reincorporation", () => {
+  const snippets = {
     root: {
       groups: [
         {
-          tags: [['test']],
-          phrases: ['test']
+          tags: [["test"]],
+          phrases: ["test"]
         }
       ]
     },
     tagged: {
       groups: [
         {
-          tags: [['foo', 'bar'], ['baz']],
-          phrases: ['test']
+          tags: [["foo", "bar"], ["baz"]],
+          phrases: ["test"]
         }
       ]
     }
   };
 
-  const reincorporater = new Improv(spec, {reincorporate: true});
+  const reincorporater = new Improv(snippets, { reincorporate: true });
 
-  it('adds used tags back into the model', () => {
+  it("adds used tags back into the model", () => {
     const model = {
       tags: []
     };
 
-    reincorporater.gen('root', model);
-    model.tags.should.eql([['test']]);
+    const result = reincorporater.fullGen("root", model);
+    assert.deepStrictEqual(result.model.tags, [["test"]]);
   });
 
-  it('merges tags with existing ones', () => {
+  it("merges tags with existing ones", () => {
     const model = {
-      tags: [['foo']]
+      tags: [["foo"]]
     };
 
-    reincorporater.gen('tagged', model);
-    model.tags.should.eql([['foo', 'bar'], ['baz']]);
+    const result = reincorporater.fullGen("tagged", model);
+    assert.deepStrictEqual(result.model.tags, [["foo", "bar"], ["baz"]]);
   });
 });
 
-describe('salience filtering', () => {
-  before(() => {
-    simple.mock(Math, 'random', () => 0.9);
-  });
-
-  after(() => {
-    simple.restore();
-  });
-
-  it('selects the best fitted phrase', () => {
-    const spec = {
+describe("salience filtering", () => {
+  it("selects the best fitted phrase", () => {
+    const snippets = {
       root: {
         groups: [
           {
-            tags: [['test']],
-            phrases: ['foo']
+            tags: [["test"]],
+            phrases: ["foo"]
           },
           {
-            tags: [['yo']],
-            phrases: ['bar']
+            tags: [["yo"]],
+            phrases: ["bar"]
           }
         ]
       }
     };
 
     const model = {
-      tags: [['test']]
+      tags: [["test"]]
     };
 
-    const fitted = new Improv(spec, {
-      filters: [Improv.filters.fullBonus()]
+    const fitted = new Improv(snippets, {
+      filters: [Improv.filters.fullBonus()],
+      rng: () => 0.9
     });
 
-    fitted.gen('root', model).should.equal('foo');
+    assert.equal(fitted.gen("root", model), "foo");
   });
 });
 
-describe('filtering API', () => {
-  before(() => {
-    simple.mock(Math, 'random', () => 0);
-  });
-
-  after(() => {
-    simple.restore();
-  });
-
-  it('gives filters access to model, a group, and the generator', () => {
+describe("filtering API", () => {
+  it("gives filters access to model, a group, and the generator", () => {
     let results;
     const myFilter = function(group, model) {
-      results = {group, model, thisObj: this};
+      results = {
+        group,
+        model
+      };
       return 0;
     };
 
     const group = {
       tags: [],
-      phrases: ['test']
+      phrases: ["test"]
     };
 
-    const spec = {
+    const snippets = {
       root: {
         groups: [group]
       }
     };
 
-    const model = {tags: ['test']};
+    const model = { tags: ["test"] };
 
-    const customFilter = new Improv(spec, {
-      filters: [myFilter]
+    const customFilter = new Improv(snippets, {
+      filters: [myFilter],
+      rng: () => 0
     });
 
-    customFilter.gen('root', model);
+    customFilter.gen("root", model);
 
-    results.group.should.equal(group);
-    results.model.should.equal(model);
-    results.thisObj.should.equal(customFilter);
+    const resultModel = {
+      tags: results.model.tags
+    };
+
+    assert.deepStrictEqual(results.group, group);
+    assert.deepStrictEqual(results.model.tags, model.tags);
   });
 
-  it('allows setting the salience formula', () => {
-    const spec = {
+  it("allows setting the salience formula", () => {
+    const snippets = {
       root: {
         groups: [
           {
-            tags: [['used']],
-            phrases: ['foo']
+            tags: [["used"]],
+            phrases: ["foo"]
           },
           {
-            tags: [['unused']],
-            phrases: ['bar']
+            tags: [["unused"]],
+            phrases: ["bar"]
           }
         ]
       }
     };
 
-    const customFilter = new Improv(spec, {
+    const customFilter = new Improv(snippets, {
       filters: [Improv.filters.unmentioned()],
-      salienceFormula: () => 0
+      salienceFormula: () => 0,
+      rng: () => 0
     });
 
     const model = {};
 
-    customFilter.gen('root', model).should.equal('foo');
-    customFilter.gen('root', model).should.equal('foo');
+    assert.equal(customFilter.gen("root", model), "foo");
+    assert.equal(customFilter.gen("root", model), "foo");
   });
 });
 
-describe('history and DRYness', () => {
-  const spec = {
+describe("history and DRYness", () => {
+  const snippets = {
     first: {
       groups: [
         {
-          tags: [['one']],
-          phrases: ['one']
+          tags: [["one"]],
+          phrases: ["one"]
         }
       ]
     },
     second: {
       groups: [
         {
-          tags: [['two'], ['three']],
-          phrases: ['two']
+          tags: [["two"], ["three"]],
+          phrases: ["two"]
         }
       ]
     },
@@ -616,19 +608,19 @@ describe('history and DRYness', () => {
       groups: [
         {
           tags: [],
-          phrases: ['one', 'two', 'three']
+          phrases: ["one", "two", "three"]
         }
       ]
     },
     fourth: {
       groups: [
         {
-          tags: ['one'],
-          phrases: ['one']
+          tags: ["one"],
+          phrases: ["one"]
         },
         {
-          tags: ['two'],
-          phrases: ['two']
+          tags: ["two"],
+          phrases: ["two"]
         }
       ]
     },
@@ -636,7 +628,7 @@ describe('history and DRYness', () => {
       groups: [
         {
           tags: [],
-          phrases: ['[:fourth][:fourth][:fourth]']
+          phrases: ["[:fourth][:fourth][:fourth]"]
         }
       ]
     }
@@ -645,110 +637,106 @@ describe('history and DRYness', () => {
   let g;
 
   beforeEach(() => {
-    g = new Improv(spec);
-  });
-
-  it('records a history of generated phrases', () => {
-    g.gen('first');
-    g.gen('second');
-    g.gen('first');
-    g.gen('first');
-    g.history.should.eql(['one', 'one', 'two', 'one']);
-  });
-
-  it('records a history of used tags', () => {
-    g.gen('first');
-    g.gen('first');
-    g.gen('second');
-    g.tagHistory.should.eql([['two'], ['three'], ['one'], ['one']]);
-  });
-
-  it('allows history to be cleared', () => {
-    g.gen('second');
-    g.gen('first');
-    g.history.should.eql(['one', 'two']);
-    g.tagHistory.should.eql([['one'], ['two'], ['three']]);
-    g.clearHistory();
-    g.clearTagHistory();
-    g.history.should.eql([]);
-    g.tagHistory.should.eql([]);
-  });
-
-  it('allows persistence to be disabled', () => {
-    const h = new Improv(spec, {persistence: false});
-    h.gen('first');
-    h.history.should.eql([]);
-    h.tagHistory.should.eql([]);
-  });
-
-  describe('dryness filter', () => {
-    before(() => {
-      simple.mock(Math, 'random', () => 0);
+    g = new Improv(snippets, {
+      rng: () => 0.5
     });
-    after(() => {
-      simple.restore();
-    });
+  });
 
-    const i = new Improv(spec, {
-      filters: [Improv.filters.dryness()]
+  it("records a history of generated phrases", () => {
+    g.gen("first");
+    g.gen("second");
+    g.gen("first");
+    g.gen("first");
+
+    assert.deepStrictEqual(g.history, ["one", "one", "two", "one"]);
+  });
+
+  it("records a history of used tags", () => {
+    g.gen("first");
+    g.gen("first");
+    g.gen("second");
+
+    assert.deepStrictEqual(g.tagHistory, [
+      ["two"],
+      ["three"],
+      ["one"],
+      ["one"]
+    ]);
+  });
+
+  it("allows history to be cleared", () => {
+    const i = new Improv(snippets, {
+      rng: () => 0.5
+    });
+    i.gen("second");
+    i.gen("first");
+
+    assert.deepStrictEqual(i.history, ["one", "two"]);
+    assert.deepStrictEqual(i.tagHistory, [["one"], ["two"], ["three"]]);
+    i.clearHistory();
+    assert.deepStrictEqual(i.history, []);
+    assert.deepStrictEqual(i.tagHistory, []);
+  });
+
+  it("allows persistence to be disabled", () => {
+    const i = new Improv(snippets, { persistence: false });
+    i.gen("first");
+    assert.deepStrictEqual(i.history, []);
+    assert.deepStrictEqual(i.tagHistory, []);
+  });
+
+  describe("dryness filter", () => {
+    const i = new Improv(snippets, {
+      filters: [Improv.filters.dryness()],
+      rng: () => 0
     });
 
     it("doesn't repeat itself", () => {
-      i.gen('third').should.equal('one');
-      i.gen('third').should.equal('two');
-      i.gen('third').should.equal('three');
+      assert.equal(i.gen("third"), "one");
+      assert.equal(i.gen("third"), "two");
+      assert.equal(i.gen("third"), "three");
     });
   });
 
-  describe('unmentioned filter', () => {
-    before(() => {
-      simple.mock(Math, 'random', () => 0);
-    });
-    after(() => {
-      simple.restore();
-    });
-
-    const j = new Improv(spec, {
-      filters: [Improv.filters.unmentioned()]
-    });
-
-    it('increases the rank of unused tags', () => {
-      j.gen('fourth').should.equal('one');
-      j.gen('fourth').should.equal('two');
-      j.gen('fourth').should.equal('one');
-    });
-  });
-
-  describe('momentary persistence', () => {
-    before(() => {
-      simple.mock(Math, 'random', () => 0);
-    });
-    after(() => {
-      simple.restore();
-    });
-
-    const i = new Improv(spec, {
+  describe("unmentioned filter", () => {
+    const i = new Improv(snippets, {
       filters: [Improv.filters.unmentioned()],
-      persistence: false
+      rng: () => 0
     });
 
-    it('retains history for the duration of one gen', () => {
-      i.gen('fifth')
-        .should.equal('onetwoone')
-        .and.equal(i.gen('fifth'));
-      i.tagHistory.should.eql([]);
+    it("increases the rank of unused tags", () => {
+      assert.equal(i.gen("fourth"), "one");
+      assert.equal(i.gen("fourth"), "two");
+      assert.equal(i.gen("fourth"), "one");
+    });
+  });
+
+  describe("momentary persistence", () => {
+    const i = new Improv(snippets, {
+      filters: [Improv.filters.unmentioned()],
+      persistence: false,
+      rng: () => 0
+    });
+
+    it("retains history for the duration of one gen", () => {
+      const gen1 = i.gen("fifth");
+      const gen2 = i.gen("fifth");
+
+      assert.equal(gen1, "onetwoone");
+      assert.equal(gen1, gen2);
+      assert.deepStrictEqual(i.tagHistory, []);
     });
   });
 });
 
-describe('submodels', () => {
-  const spec = {
+describe("submodels", () => {
+  const snippets = {
     eyecolor: {
       bind: true,
       groups: [
         {
           tags: [],
-          phrases: ['blue', 'black', 'brown']
+          phrases: ["blue", "black", "brown"]
         }
       ]
     },
@@ -757,7 +745,7 @@ describe('submodels', () => {
       groups: [
         {
           tags: [],
-          phrases: ['lawyer', 'thief', 'hunter']
+          phrases: ["lawyer", "thief", "hunter"]
         }
       ]
     },
@@ -765,7 +753,7 @@ describe('submodels', () => {
       groups: [
         {
           tags: [],
-          phrases: ['[:occupation] with [:eyecolor] eyes']
+          phrases: ["[:occupation] with [:eyecolor] eyes"]
         }
       ]
     },
@@ -773,7 +761,7 @@ describe('submodels', () => {
       groups: [
         {
           tags: [],
-          phrases: ['[a >person1:person_desc];[a >person2:person_desc]']
+          phrases: ["[a >person1:person_desc];[a >person2:person_desc]"]
         }
       ]
     },
@@ -781,7 +769,7 @@ describe('submodels', () => {
       groups: [
         {
           tags: [],
-          phrases: ['[a >person1:person_desc]']
+          phrases: ["[a >person1:person_desc]"]
         }
       ]
     },
@@ -789,7 +777,7 @@ describe('submodels', () => {
       groups: [
         {
           tags: [],
-          phrases: ['[a >person2:person_desc]']
+          phrases: ["[a >person2:person_desc]"]
         }
       ]
     },
@@ -797,7 +785,7 @@ describe('submodels', () => {
       groups: [
         {
           tags: [],
-          phrases: ['[>person2:proptest]']
+          phrases: ["[>person2:proptest]"]
         }
       ]
     },
@@ -805,7 +793,7 @@ describe('submodels', () => {
       groups: [
         {
           tags: [],
-          phrases: ['[prop]']
+          phrases: ["[prop]"]
         }
       ]
     }
@@ -814,26 +802,26 @@ describe('submodels', () => {
   let g;
 
   beforeEach(() => {
-    g = new Improv(spec, {
+    g = new Improv(snippets, {
       submodeler() {
         return {
-          prop: 'foo'
+          prop: "foo"
         };
       }
     });
   });
 
-  it('uses submodels', () => {
+  it("uses submodels", () => {
     const model = {};
-    const [a, b] = g.gen('main_phrase', model).split(';');
+    const [a, b] = g.gen("main_phrase", model).split(";");
     a.should.match(/(lawyer|thief|hunter) with (blue|black|brown) eyes/);
-    a.should.equal(g.gen('person1', model));
-    b.should.equal(g.gen('person2', model));
+    a.should.equal(g.gen("person1", model));
+    b.should.equal(g.gen("person2", model));
   });
 
-  it('uses the submodeler function', () => {
+  it("uses the submodeler function", () => {
     const model = {};
-    g.gen('person_proptest', model).should.equal('foo');
+    g.gen("person_proptest", model).should.equal("foo");
   });
 });
 
