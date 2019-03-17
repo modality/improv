@@ -9,7 +9,7 @@
     "url": "http://segue.pw/"
   },
   "license": "MIT",
-  "main": "lib/index.js",
+  "main": "dist/index.js",
   "files": [
     "dist"
   ],

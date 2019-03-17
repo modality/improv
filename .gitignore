@@ -1,6 +1,6 @@
 node_modules
 coverage
-dist
+#dist
 demo_build
 docs/_build
 .nyc_output
