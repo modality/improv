@@ -1,3 +1,7 @@
+## under_construction.gif
+
+_I'm tinkering heavily with this library, feel free to contact me on Twitter **@modality** if you have thoughts or feedback._
+
 # Improv
 
 [![NPM version][npm-image]][npm-url] [![Build Status][travis-image]][travis-url] [![Dependency Status](https://david-dm.org/sequitur/improv.svg)](https://david-dm.org/sequitur/improv) [![Documentation Status](https://readthedocs.org/projects/improv/badge/?version=latest)](http://improv.readthedocs.org/en/latest/?badge=latest)
