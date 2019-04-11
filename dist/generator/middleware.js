@@ -39,11 +39,13 @@ function useBindingsMiddleware(ref, improvGenFn) {
 
 function useSubmodelMiddleware(ref, improvGenFn) {
   return function (snippet, model, subModelName) {
+    var passedModel = model;
+
     if (subModelName) {
-      model = (0, _model.submodel)(model, subModelName);
+      passedModel = (0, _model.submodel)(model, subModelName);
     }
 
-    return improvGenFn(snippet, model, subModelName);
+    return improvGenFn(snippet, passedModel, subModelName);
   };
 }
 /* For the sake of better error handling, we try to keep an accurate record
