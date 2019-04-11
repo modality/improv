@@ -1,7 +1,6 @@
 /* Main Improv file */
 import assert from "assert";
 import should from "should";
-import simple from "simple-mock";
 import Improv from "../lib";
 import {
   createFiltersSelector,
