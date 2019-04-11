@@ -138,7 +138,8 @@ function createPhraseSelector(reincorporate, rng) {
   */
   return function (phrases, model) {
     if (phrases.length === 0) {
-      throw new Error("Ran out of phrases in ".concat(groups)); //while generating ${this.__currentSnippet}
+      console.error('Ran out of phrases', model);
+      throw new Error("Ran out of phrases."); //while generating ${this.__currentSnippet}
     }
 
     var chosen = phrases[Math.floor(rng() * phrases.length)];
